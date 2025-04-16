@@ -1,198 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Winter Swimming Endurance</title>
-  <style>
-    /* Reset default styles */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    /* Icy blue background for winter theme */
-    body {
-      background-color: #e0f7ff;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
-    /* Main game container covering full viewport */
-    #game-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-    }
-    /* Simple character representation */
-    #character {
-      position: absolute;
-      bottom: 20%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      height: 100px;
-      background-color: #fff;
-      border: 3px solid #000;
-      border-radius: 50%;
-      /* Shiver animation to simulate cold */
-      animation: shiver 0.1s infinite alternate;
-    }
-    /* Keyframes for the shiver effect */
-    @keyframes shiver {
-      from { transform: translate(-50%, 0) rotate(-2deg); }
-      to { transform: translate(-50%, 0) rotate(2deg); }
-    }
-    /* Warmth meter container */
-    #warmth-container {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80%;
-      height: 30px;
-      border: 2px solid #000;
-      background-color: #ccc;
-    }
-    /* Warmth meter fill that visually decreases */
-    #warmth-bar {
-      height: 100%;
-      width: 100%;
-      background-color: #ff4500; /* warm color */
-      transition: width 0.5s ease;
-    }
-    /* Popup text for valid spoken words */
-    .popup {
-      position: absolute;
-      color: #000;
-      font-size: 20px;
-      font-weight: bold;
-      animation: fadeOut 2s forwards;
-    }
-    /* Fade out animation for popup messages */
-    @keyframes fadeOut {
-      0% { opacity: 1; }
-      100% { opacity: 0; }
-    }
-    /* Game Over message styling */
-    #game-over {
-      position: absolute;
-      top: 40%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 40px;
-      font-weight: bold;
-      color: red;
-      display: none;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Winter Swimming Game</title>
+  <!-- Link to external CSS file -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Main Game Container -->
   <div id="game-container">
-    <!-- Warmth Meter -->
-    <div id="warmth-container">
-      <div id="warmth-bar"></div>
+    <!-- Jetty Area -->
+    <div id="jetty">
+      <p>Jetty</p>
     </div>
-    <!-- Character that shivers -->
-    <div id="character"></div>
-    <!-- Game Over Message -->
-    <div id="game-over">Game Over</div>
+    <!-- Water Area -->
+    <div id="water">
+      <p>Water</p>
+    </div>
+    <!-- Container for Dynamic Pop-ups -->
+    <div id="popups"></div>
+    <!-- Temperature Bar Container -->
+    <div id="temp-bar-container">
+      <div id="temp-bar"></div>
+      <div id="temp-label"></div>
+    </div>
   </div>
-
-  <script>
-    // Valid Nordic words to be detected (all lowercase for comparison)
-    const validWords = ["yksi", "kaksi", "kolme", "fy flate", "jäklar", "perkele"];
-
-    // Game variables
-    let warmth = 100; // Starting warmth percentage
-    const warmthDecreaseRate = 0.5; // Warmth decreases by this amount every second
-    const warmthIncreaseAmount = 10; // Increase warmth by this amount per valid word
-
-    const warmthBar = document.getElementById('warmth-bar');
-    const gameOverEl = document.getElementById('game-over');
-
-    // Update the visual width of the warmth bar
-    function updateWarmthBar() {
-      warmthBar.style.width = Math.max(0, warmth) + '%';
-    }
-
-    // End the game when warmth runs out
-    function endGame() {
-      clearInterval(gameInterval);
-      recognition.stop();
-      gameOverEl.style.display = 'block';
-    }
-
-    // Decrease warmth gradually every second
-    const gameInterval = setInterval(() => {
-      warmth -= warmthDecreaseRate;
-      if (warmth <= 0) {
-        warmth = 0;
-        updateWarmthBar();
-        endGame();
-      } else {
-        updateWarmthBar();
-      }
-    }, 1000);
-
-    // Display a humorous popup message when a valid word is detected
-    function showPopup(word) {
-      const popup = document.createElement('div');
-      popup.className = 'popup';
-      popup.textContent = word;
-      // Position popup randomly near the character
-      const character = document.getElementById('character');
-      const charRect = character.getBoundingClientRect();
-      popup.style.left = (charRect.left + charRect.width / 2 + (Math.random() * 100 - 50)) + 'px';
-      popup.style.top = (charRect.top - 30 + (Math.random() * 50 - 25)) + 'px';
-      document.body.appendChild(popup);
-      // Remove popup after 2 seconds (animation duration)
-      setTimeout(() => {
-        popup.remove();
-      }, 2000);
-    }
-
-    // Check for Speech Recognition API support
-    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!window.SpeechRecognition) {
-      alert("Your browser does not support the Speech Recognition API. Please use Chrome or a compatible browser.");
-    }
-
-    // Initialize speech recognition
-    const recognition = new window.SpeechRecognition();
-    recognition.continuous = true; // Keep listening continuously
-    recognition.interimResults = false;
-    recognition.lang = 'en-US'; // Set language (adjust if needed)
-
-    // Process speech results
-    recognition.onresult = function(event) {
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          // Convert recognized text to lowercase and trim whitespace
-          const spokenText = event.results[i][0].transcript.trim().toLowerCase();
-          console.log("Recognized:", spokenText);
-          // Check if any valid word is present in the spoken text
-          validWords.forEach(word => {
-            if (spokenText.includes(word)) {
-              // Increase warmth but ensure it does not exceed 100%
-              warmth = Math.min(100, warmth + warmthIncreaseAmount);
-              updateWarmthBar();
-              // Show a popup message with the detected word
-              showPopup(word);
-            }
-          });
-        }
-      }
-    };
-
-    // Restart recognition if it stops unexpectedly
-    recognition.onend = function() {
-      if (warmth > 0) {
-        recognition.start();
-      }
-    };
-
-    // Start speech recognition
-    recognition.start();
-  </script>
+  <!-- Link to external JavaScript file -->
+  <script src="game.js"></script>
 </body>
 </html>
