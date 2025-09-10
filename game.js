@@ -23,21 +23,34 @@
   let rightPressed = false;
   let leftPressed = false;
 
-  const brickRowCount = 3;
-  const brickColumnCount = 5;
   const brickWidth = 75;
   const brickHeight = 20;
   const brickPadding = 10;
   const brickOffsetTop = 30;
   const brickOffsetLeft = 30;
 
-  const bricks = [];
-  for (let c = 0; c < brickColumnCount; c++) {
-    bricks[c] = [];
-    for (let r = 0; r < brickRowCount; r++) {
-      bricks[c][r] = { x: 0, y: 0, status: 1 };
+  const levels = [
+    { rows: 3, cols: 5 },
+    { rows: 4, cols: 6 }
+  ];
+  let currentLevel = 0;
+  let brickRowCount = levels[currentLevel].rows;
+  let brickColumnCount = levels[currentLevel].cols;
+  let bricks = [];
+  let bricksLeft = 0;
+
+  function initBricks() {
+    bricks = [];
+    for (let c = 0; c < brickColumnCount; c++) {
+      bricks[c] = [];
+      for (let r = 0; r < brickRowCount; r++) {
+        bricks[c][r] = { x: 0, y: 0, status: 1 };
+      }
     }
+    bricksLeft = brickRowCount * brickColumnCount;
   }
+
+  initBricks();
 
   let score = 0;
   let lives = 3;
@@ -78,9 +91,23 @@
             dy = -dy;
             b.status = 0;
             score++;
-            if (score === brickRowCount * brickColumnCount) {
-              alert('You smashed all the ice! Time for a winter swim!');
-              document.location.reload();
+            bricksLeft--;
+            if (bricksLeft === 0) {
+              currentLevel++;
+              if (currentLevel < levels.length) {
+                alert('Level complete! Prepare for colder waters.');
+                brickRowCount = levels[currentLevel].rows;
+                brickColumnCount = levels[currentLevel].cols;
+                initBricks();
+                x = canvas.width / 2;
+                y = canvas.height - 30;
+                dx = 2 + currentLevel;
+                dy = -(2 + currentLevel);
+                paddleX = (canvas.width - paddleWidth) / 2;
+              } else {
+                alert('You smashed all the ice! Time for a winter swim!');
+                document.location.reload();
+              }
             }
           }
         }
@@ -134,6 +161,12 @@
     ctx.fillText('Warmth: ' + lives, canvas.width - 90, 20);
   }
 
+  function drawLevel() {
+    ctx.font = '16px Arial';
+    ctx.fillStyle = '#000';
+    ctx.fillText('Level: ' + (currentLevel + 1), canvas.width / 2 - 30, 20);
+  }
+
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBricks();
@@ -141,6 +174,7 @@
     drawPaddle();
     drawScore();
     drawLives();
+    drawLevel();
     collisionDetection();
 
     if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
@@ -159,8 +193,8 @@
         } else {
           x = canvas.width / 2;
           y = canvas.height - 30;
-          dx = 2;
-          dy = -2;
+          dx = 2 + currentLevel;
+          dy = -(2 + currentLevel);
           paddleX = (canvas.width - paddleWidth) / 2;
         }
       }
